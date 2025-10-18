@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "Onebox Email API",
+    "description": "Complete API collection for testing Onebox email aggregator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Emails",
+      "item": [
+        {
+          "name": "Get All Emails",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/emails?size=20",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails"],
+              "query": [
+                {"key": "query", "value": "meeting", "disabled": true},
+                {"key": "accountId", "value": "account1", "disabled": true},
+                {"key": "category", "value": "interested", "disabled": true},
+                {"key": "from", "value": "0", "disabled": true},
+                {"key": "size", "value": "20", "disabled": false}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Emails",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/emails?query=interview&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "emails"],
+              "query": [
+                {"key": "query", "value": "interview"},
+                {"key": "size", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Email by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:3000/api/emails/{{emailId}}"
+          }
+        },
+        {
+          "name": "Update Email Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"interested\"\n}"
+            },
+            "url": "http://localhost:3000/api/emails/{{emailId}}/category"
+          }
+        },
+        {
+          "name": "Get AI Suggested Reply",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "url": "http://localhost:3000/api/emails/{{emailId}}/suggest-reply"
+          }
+        },
+        {
+          "name": "Get Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:3000/api/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vector Database",
+      "item": [
+        {
+          "name": "Get All Documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "http://localhost:3000/api/vector/documents"
+          }
+        },
+        {
+          "name": "Add Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"custom-template\",\n  \"content\": \"When replying to interview invitations, always be professional and confirm availability with the meeting link.\",\n  \"metadata\": {\n    \"type\": \"template\",\n    \"category\": \"interview\"\n  }\n}"
+            },
+            "url": "http://localhost:3000/api/vector/documents"
+          }
+        },
+        {
+          "name": "Search Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"meeting link\",\n  \"limit\": 5\n}"
+            },
+            "url": "http://localhost:3000/api/vector/documents/search"
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "http://localhost:3000/api/vector/documents/{{documentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "http://localhost:3000/health"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "emailId",
+      "value": "your-email-id-here",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "custom-template",
+      "type": "string"
+    }
+  ]
+}

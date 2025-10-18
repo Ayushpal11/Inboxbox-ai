@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onebox - Email Aggregator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .email-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .loading {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">📧 Onebox</h1>
+                    <div class="flex items-center gap-4">
+                        <span id="totalCount" class="text-sm text-gray-600">0 emails</span>
+                        <button onclick="refreshEmails()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <input type="text" id="searchQuery" placeholder="Search emails..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Account</label>
+                        <select id="accountFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All Accounts</option>
+                            <option value="account1">Account 1</option>
+                            <option value="account2">Account 2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">All Categories</option>
+                            <option value="interested">Interested</option>
+                            <option value="meeting_booked">Meeting Booked</option>
+                            <option value="not_interested">Not Interested</option>
+                            <option value="spam">Spam</option>
+                            <option value="out_of_office">Out of Office</option>
+                            <option value="uncategorized">Uncategorized</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="applyFilters()" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Email List -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <div id="loadingIndicator" class="flex justify-center items-center py-12 hidden">
+                            <div class="loading"></div>
+                        </div>
+                        <div id="emailList" class="divide-y divide-gray-200">
+                            <!-- Emails will be loaded here -->
+                        </div>
+                        <div id="emptyState" class="text-center py-12 hidden">
+                            <p class="text-gray-500">No emails found</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Detail -->
+                <div class="lg:col-span-1">
+                    <div id="emailDetail" class="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+                        <div class="text-center text-gray-500 py-12">
+                            Select an email to view details
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for AI Suggested Reply -->
+    <div id="replyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">AI Suggested Reply</h3>
+                <button onclick="closeReplyModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="replyContent" class="mb-4">
+                <div class="flex justify-center py-8">
+                    <div class="loading"></div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeReplyModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Close
+                </button>
+                <button onclick="copyReply()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Copy Reply
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let currentEmails = [];
+        let selectedEmail = null;
+        let suggestedReplyText = '';
+
+        // Category colors and labels
+        const categoryConfig = {
+            interested: { color: 'bg-green-100 text-green-800', label: '🎯 Interested' },
+            meeting_booked: { color: 'bg-blue-100 text-blue-800', label: '📅 Meeting Booked' },
+            not_interested: { color: 'bg-red-100 text-red-800', label: '❌ Not Interested' },
+            spam: { color: 'bg-gray-100 text-gray-800', label: '🗑️ Spam' },
+            out_of_office: { color: 'bg-yellow-100 text-yellow-800', label: '🏖️ Out of Office' },
+            uncategorized: { color: 'bg-purple-100 text-purple-800', label: '📝 Uncategorized' }
+        };
+
+        // Load emails on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEmails();
+        });
+
+        async function loadEmails(filters = {}) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const emailList = document.getElementById('emailList');
+            const emptyState = document.getElementById('emptyState');
+
+            loadingIndicator.classList.remove('hidden');
+            emailList.innerHTML = '';
+            emptyState.classList.add('hidden');
+
+            try {
+                const params = new URLSearchParams();
+                if (filters.query) params.append('query', filters.query);
+                if (filters.accountId) params.append('accountId', filters.accountId);
+                if (filters.category) params.append('category', filters.category);
+
+                const response = await fetch(`${API_URL}/emails?${params.toString()}`);
+                const data = await response.json();
+
+                loadingIndicator.classList.add('hidden');
+
+                if (data.success && data.emails.length > 0) {
+                    currentEmails = data.emails;
+                    document.getElementById('totalCount').textContent = `${data.count} emails`;
+                    renderEmailList(data.emails);
+                } else {
+                    emptyState.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error loading emails:', error);
+                loadingIndicator.classList.add('hidden');
+                emailList.innerHTML = '<div class="text-center py-12 text-red-600">Error loading emails</div>';
+            }
+        }
+
+        function renderEmailList(emails) {
+            const emailList = document.getElementById('emailList');
+            emailList.innerHTML = emails.map(email => {
+                const category = email.category || 'uncategorized';
+                const config = categoryConfig[category] || categoryConfig.uncategorized;
+                const date = new Date(email.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+
+                return `
+                    <div class="p-4 hover:bg-gray-50 cursor-pointer transition" onclick="selectEmail('${email.id}')">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-sm font-semibold text-gray-900 truncate">${email.from}</h3>
+                                    <span class="px-2 py-1 text-xs rounded-full ${config.color}">${config.label}</span>
+                                </div>
+                                <h4 class="text-sm font-medium text-gray-700 mb-1">${email.subject || '(No Subject)'}</h4>
+                                <p class="text-sm text-gray-500 email-preview">${email.textBody || stripHtml(email.body) || 'No content'}</p>
+                            </div>
+                            <div class="ml-4 flex-shrink-0">
+                                <span class="text-xs text-gray-500">${date}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function selectEmail(emailId) {
+            try {
+                const response = await fetch(`${API_URL}/emails/${emailId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    selectedEmail = data.email;
+                    renderEmailDetail(data.email);
+                }
+            } catch (error) {
+                console.error('Error loading email details:', error);
+            }
+        }
+
+        function renderEmailDetail(email) {
+            const emailDetail = document.getElementById('emailDetail');
+            const category = email.category || 'uncategorized';
+            const config = categoryConfig[category] || categoryConfig.uncategorized;
+            const date = new Date(email.date).toLocaleString();
+
+            emailDetail.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <span class="px-3 py-1 text-sm rounded-full ${config.color}">${config.label}</span>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">From</label>
+                        <p class="text-sm text-gray-900 mt-1">${email.from}</p>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Subject</label>
+                        <p class="text-sm font-medium text-gray-900 mt-1">${email.subject || '(No Subject)'}</p>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Date</label>
+                        <p class="text-sm text-gray-600 mt-1">${date}</p>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase">Account</label>
+                        <p class="text-sm text-gray-600 mt-1">${email.accountId}</p>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">Body</label>
+                        <div class="text-sm text-gray-700 max-h-64 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                            ${email.textBody || stripHtml(email.body) || 'No content'}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <button onclick="getSuggestedReply('${email.id}')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            🤖 Get AI Suggested Reply
+                        </button>
+                        
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 uppercase mb-2 block">Change Category</label>
+                            <select onchange="updateCategory('${email.id}', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="">Select category...</option>
+                                <option value="interested" ${category === 'interested' ? 'selected' : ''}>🎯 Interested</option>
+                                <option value="meeting_booked" ${category === 'meeting_booked' ? 'selected' : ''}>📅 Meeting Booked</option>
+                                <option value="not_interested" ${category === 'not_interested' ? 'selected' : ''}>❌ Not Interested</option>
+                                <option value="spam" ${category === 'spam' ? 'selected' : ''}>🗑️ Spam</option>
+                                <option value="out_of_office" ${category === 'out_of_office' ? 'selected' : ''}>🏖️ Out of Office</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updateCategory(emailId, category) {
+            if (!category) return;
+
+            try {
+                const response = await fetch(`${API_URL}/emails/${emailId}/category`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Category updated successfully!');
+                    refreshEmails();
+                }
+            } catch (error) {
+                console.error('Error updating category:', error);
+                alert('❌ Failed to update category');
+            }
+        }
+
+        async function getSuggestedReply(emailId) {
+            const modal = document.getElementById('replyModal');
+            const replyContent = document.getElementById('replyContent');
+            
+            modal.classList.remove('hidden');
+            replyContent.innerHTML = '<div class="flex justify-center py-8"><div class="loading"></div></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/emails/${emailId}/suggest-reply`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    suggestedReplyText = data.suggestedReply.reply;
+                    replyContent.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p class="text-sm text-gray-700 whitespace-pre-wrap">${data.suggestedReply.reply}</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span>Confidence: ${(data.suggestedReply.confidence * 100).toFixed(0)}%</span>
+                                <span>•</span>
+                                <span>${data.suggestedReply.context || 'AI-generated'}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    replyContent.innerHTML = '<p class="text-red-600">Failed to generate reply</p>';
+                }
+            } catch (error) {
+                console.error('Error getting suggested reply:', error);
+                replyContent.innerHTML = '<p class="text-red-600">Error generating reply</p>';
+            }
+        }
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').classList.add('hidden');
+        }
+
+        function copyReply() {
+            if (suggestedReplyText) {
+                navigator.clipboard.writeText(suggestedReplyText);
+                alert('✅ Reply copied to clipboard!');
+            }
+        }
+
+        function applyFilters() {
+            const filters = {
+                query: document.getElementById('searchQuery').value,
+                accountId: document.getElementById('accountFilter').value,
+                category: document.getElementById('categoryFilter').value
+            };
+            loadEmails(filters);
+        }
+
+        function refreshEmails() {
+            applyFilters();
+        }
+
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        // Enter key to search
+        document.getElementById('searchQuery')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    </script>
+</body>
+</html>
