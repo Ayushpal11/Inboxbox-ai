@@ -1,4 +1,4 @@
-﻿# Onebox - Feature-Rich Email Aggregator
+﻿# InboxboxAI - Feature-Rich Email Aggregator
 
 A comprehensive email onebox system with real-time IMAP synchronization, AI-powered categorization, and advanced search capabilities.
 
