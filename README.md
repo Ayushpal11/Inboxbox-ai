@@ -288,7 +288,7 @@ ISC
 
 ## 👨‍💻 Author
 
-Built for the Onebox Engineering Assignment
+Made with ❤️ for u
 
 ## 🙏 Acknowledgments
 
